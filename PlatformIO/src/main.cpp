@@ -44,7 +44,7 @@ camera_config_t config = {
 void takePhotoAndCollectData() {
     Serial.println("Tomando Foto");
 
-    // Capturar imagen
+    // Capturar la imagen tomada
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) {
         Serial.println("Error capturando foto");
@@ -54,11 +54,11 @@ void takePhotoAndCollectData() {
     if (WiFi.status() == WL_CONNECTED){
         HTTPClient http;
 
-        //Ip
         http.begin("http://192.168.0.148:3001/upload");
 
         http.addHeader("Content-Type", "image/jpeg");
 
+        //Envia los bytes de la imagen (buf), cantidad de bytes (len)
         int httpResponseCode = http.POST(fb->buf, fb->len);
 
         if (httpResponseCode > 0){
@@ -69,7 +69,7 @@ void takePhotoAndCollectData() {
             Serial.println(response);
         }else{
             Serial.printf("Error enviando POST: %s\n",
-                          http.errorToString(httpResponseCode).c_str());
+            http.errorToString(httpResponseCode).c_str());
         }
 
         http.end();
@@ -79,14 +79,13 @@ void takePhotoAndCollectData() {
 
     Serial.println("Preparado para enviar a la nube...");
 
-
+    //Liberar memoria
     esp_camera_fb_return(fb);
 
     Serial.println("Foto lista \n");
 }
 
-void setup()
-{
+void setup() {
     Serial.begin(115200);
     delay(1000);
     Serial.println("ESP32 Camera on");
@@ -104,26 +103,22 @@ void setup()
     lastPhotoMs = millis();
 }
 
-void loop()
-{
+void loop() {
     const uint32_t nowMs = millis();
 
     wifi.loop();
 
-    if (!photoRequested && (nowMs - lastPhotoMs >= PHOTO_INTERVAL_MS))
-    {
+    if (!photoRequested && (nowMs - lastPhotoMs >= PHOTO_INTERVAL_MS)){
         Serial.println("Photo interval reached");
         photoRequested = true;
 
-        if (!wifi.isConnected())
-        {
+        if (!wifi.isConnected()){
             Serial.println("WiFi not connected, retrying...");
             wifi.connect();
         }
     }
 
-    if (photoRequested && wifi.isConnected())
-    {
+    if (photoRequested && wifi.isConnected()){
         takePhotoAndCollectData();
 
         lastPhotoMs = millis();
